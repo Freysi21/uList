@@ -8,13 +8,19 @@ import java.util.List;
 public class Store {
     private List<Item> list;
     private String name;
+    int id;
 
-    public Store(String name) {
+    public Store(int id, String name) {
         this.name = name;
+        this.id = id;
     }
 
     public String getName() {
         return name;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public List<Item> getItems(){

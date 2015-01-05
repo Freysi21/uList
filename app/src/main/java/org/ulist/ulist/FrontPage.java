@@ -6,6 +6,8 @@ import android.os.Bundle;
 
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -23,9 +25,33 @@ import java.util.List;
 
 
 public class FrontPage extends ActionBarActivity {
+
+    private static final int EDIT = 0, DELETE = 1;
+
     EditText storeName;
     List<Store> stores = new ArrayList<Store>();
     ListView storeListView;
+    int longClickedIndex;
+    DatabaseHandler dbHandler;
+
+    private class StoreListAdapter extends ArrayAdapter<Store> {
+        public StoreListAdapter() {
+            super (FrontPage.this, R.layout.store_view, stores);
+        }
+
+        @Override
+        public View getView(int pos, View view, ViewGroup parent) {
+            if(view == null)
+                view = getLayoutInflater().inflate(R.layout.store_view, parent, false);
+
+            Store currStore = stores.get(pos);
+
+            TextView name = (TextView) view.findViewById(R.id.storeName);
+            name.setText(currStore.getName());
+
+            return view;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,16 +60,22 @@ public class FrontPage extends ActionBarActivity {
 
         storeName = (EditText) findViewById(R.id.inputAddStore);
         storeListView = (ListView) findViewById(R.id.storeListView);
+        dbHandler = new DatabaseHandler(getApplicationContext());
 
         final Button storeAddBtn = (Button) findViewById(R.id.btnAddStore);
         storeAddBtn.setOnClickListener(new View.OnClickListener() { //button addStore button implement
+
             @Override
             public void onClick(View v) {
                 //hide keyboard
                 InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), inputManager.HIDE_NOT_ALWAYS);
 
-                Store store = new Store(storeName.getText().toString());
+                //create Store in database
+                Store store = new Store(dbHandler.getStoreCount(), String.valueOf(storeName.getText()));
+                dbHandler.createStore(store);
+
+
                 if(storeExists(store))
                     Toast.makeText(getApplicationContext(), storeName.getText().toString() + " already exists!", Toast.LENGTH_SHORT).show();
                 else {
@@ -78,9 +110,29 @@ public class FrontPage extends ActionBarActivity {
             }
         });
 
-        populateList();
+        //get all contact in the database
+        List<Store> addableStores = dbHandler.getAllStores();
+        int storeCount = dbHandler.getStoreCount();
+
+        for(int i = 0; i < storeCount; i++) {
+            stores.add(addableStores.get(i));
+        }
+
+        if(!addableStores.isEmpty())
+            populateList();
+
+        //Long clickedItem
+        registerForContextMenu(storeListView);
+        storeListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                longClickedIndex = position;
+                return false;
+            }
+        });
     }
 
+    //Checks if a store exists in the list
     public boolean storeExists(Store store) {
         String name = store.getName();
         for(int i = 0; i < stores.size(); i++) {
@@ -97,23 +149,14 @@ public class FrontPage extends ActionBarActivity {
 
     }
 
-    private class StoreListAdapter extends ArrayAdapter<Store> {
-        public StoreListAdapter() {
-            super (FrontPage.this, R.layout.store_view, stores);
-        }
+    //Menu for longClicked Item lists
+    public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, view, menuInfo);
 
-        @Override
-        public View getView(int pos, View view, ViewGroup parent) {
-            if(view == null)
-                view = getLayoutInflater().inflate(R.layout.store_view, parent, false);
-
-            Store currStore = stores.get(pos);
-
-            TextView name = (TextView) view.findViewById(R.id.storeName);
-            name.setText(currStore.getName());
-
-            return view;
-        }
+        menu.add(Menu.NONE, EDIT, Menu.NONE, "Edit Store");
+        menu.add(Menu.NONE, DELETE, Menu.NONE, "Delete Store");
     }
+
+
 
 }
