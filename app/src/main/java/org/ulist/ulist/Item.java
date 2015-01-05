@@ -5,13 +5,12 @@ package org.ulist.ulist;
  */
 public class Item {
     private String name;
-    private String color;
-    private int quantity;
 
-    public Item (String name, String color, int quantity) {
+    public Item (String name) {
         this.name = name;
-        this.color = color;
-        this.quantity = quantity;
     }
 
+    public String getName() {
+        return name;
+    }
 }

@@ -1,5 +1,6 @@
 package org.ulist.ulist;
 
+import android.content.Context;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 
@@ -7,6 +8,8 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -36,12 +39,25 @@ public class FrontPage extends ActionBarActivity {
         storeAddBtn.setOnClickListener(new View.OnClickListener() { //button addStore button implement
             @Override
             public void onClick(View v) {
+                //hide keyboard
+                InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), inputManager.HIDE_NOT_ALWAYS);
+
                 Store store = new Store(storeName.getText().toString());
-                stores.add(store);
-                Toast.makeText(getApplicationContext(), storeName.getText().toString()
-                        + " has been added!", Toast.LENGTH_SHORT).show();
+                if(storeExists(store))
+                    Toast.makeText(getApplicationContext(), storeName.getText().toString() + " already exists!", Toast.LENGTH_SHORT).show();
+                else {
+                    stores.add(store);
+                    populateList();
+                    Toast.makeText(getApplicationContext(), storeName.getText().toString()
+                            + " has been added!", Toast.LENGTH_SHORT).show();
+
+                    storeName.setText("");
+                }
             }
         });
+
+
 
         //Store input implement
         storeName.addTextChangedListener(new TextWatcher() {
@@ -63,16 +79,26 @@ public class FrontPage extends ActionBarActivity {
         });
 
         populateList();
+    }
 
+    public boolean storeExists(Store store) {
+        String name = store.getName();
+        for(int i = 0; i < stores.size(); i++) {
+            if(name.compareTo(stores.get(i).getName()) == 0)
+                return true;
+        }
+
+        return false;
     }
 
     public void populateList() {
-        storeListAdapter adapter = new storeListAdapter();
+        StoreListAdapter adapter = new StoreListAdapter();
         storeListView.setAdapter(adapter);
+
     }
 
-    private class storeListAdapter extends ArrayAdapter<Store> {
-        public storeListAdapter() {
+    private class StoreListAdapter extends ArrayAdapter<Store> {
+        public StoreListAdapter() {
             super (FrontPage.this, R.layout.store_view, stores);
         }
 

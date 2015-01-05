@@ -1,10 +1,12 @@
 package org.ulist.ulist;
 
+import java.util.List;
+
 /**
  * Created by Omar on 30.12.2014.
  */
 public class Store {
-    private ItemList list;
+    private List<Item> list;
     private String name;
 
     public Store(String name) {
@@ -15,7 +17,11 @@ public class Store {
         return name;
     }
 
-    public ItemList getItems(){
+    public List<Item> getItems(){
         return list;
+    }
+
+    public int listSize() {
+        return list.size();
     }
 }
