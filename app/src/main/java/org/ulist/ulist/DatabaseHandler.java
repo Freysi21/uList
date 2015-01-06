@@ -56,8 +56,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
 
         //goto each db row and select certain values
-        Cursor cursor = db.query(TABLE_STORE, new String[] { KEY_ID, KEY_NAME}, KEY_ID + "=?"
-                , new String[] { String.valueOf(id) }, null, null, null, null);
+        Cursor cursor = db.query(TABLE_STORE, new String[] { KEY_ID, KEY_NAME}, KEY_ID + "=?",
+                new String[] { String.valueOf(id) }, null, null, null, null);
 
         if(cursor != null)
             cursor.moveToFirst();
@@ -95,9 +95,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //load to table
         db.insert(TABLE_STORE, null, values);
+        int rowsAffected = db.update(TABLE_STORE, values, KEY_ID + "=?",
+                new String[] { String.valueOf(store.getId()) });
+
         db.close();
 
-        return db.update(TABLE_STORE, values, KEY_ID + "=?", new String[] { String.valueOf(store.getId()) });
+        return rowsAffected;
     }
 
     public List<Store> getAllStores() {
@@ -108,11 +111,13 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         if(cursor.moveToFirst()) {
             do {
-                Store store = new Store(Integer.parseInt(cursor.getString(0)), cursor.getString(1));
-                stores.add(store);
+                stores.add(new Store(Integer.parseInt(cursor.getString(0)), cursor.getString(1)));
             }
             while(cursor.moveToNext());
         }
+
+        cursor.close();
+        db.close();
 
         return stores;
     }

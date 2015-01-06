@@ -8,6 +8,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.ContextMenu;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -33,6 +34,7 @@ public class FrontPage extends ActionBarActivity {
     ListView storeListView;
     int longClickedIndex;
     DatabaseHandler dbHandler;
+    ArrayAdapter<Store> storeAdapter;
 
     private class StoreListAdapter extends ArrayAdapter<Store> {
         public StoreListAdapter() {
@@ -71,25 +73,23 @@ public class FrontPage extends ActionBarActivity {
                 InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), inputManager.HIDE_NOT_ALWAYS);
 
-                //create Store in database
                 Store store = new Store(dbHandler.getStoreCount(), String.valueOf(storeName.getText()));
-                dbHandler.createStore(store);
-
 
                 if(storeExists(store))
-                    Toast.makeText(getApplicationContext(), storeName.getText().toString() + " already exists!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), String.valueOf(storeName.getText()) +
+                            " already exists!", Toast.LENGTH_SHORT).show();
                 else {
+                    dbHandler.createStore(store);
                     stores.add(store);
-                    populateList();
-                    Toast.makeText(getApplicationContext(), storeName.getText().toString()
+                    storeAdapter.notifyDataSetChanged();
+                    Toast.makeText(getApplicationContext(), String.valueOf(storeName.getText())
                             + " has been added!", Toast.LENGTH_SHORT).show();
 
                     storeName.setText("");
+                    return;
                 }
             }
         });
-
-
 
         //Store input implement
         storeName.addTextChangedListener(new TextWatcher() {
@@ -111,15 +111,11 @@ public class FrontPage extends ActionBarActivity {
         });
 
         //get all contact in the database
-        List<Store> addableStores = dbHandler.getAllStores();
-        int storeCount = dbHandler.getStoreCount();
+        if(dbHandler.getStoreCount() != 0)
+            stores.addAll(dbHandler.getAllStores());
 
-        for(int i = 0; i < storeCount; i++) {
-            stores.add(addableStores.get(i));
-        }
 
-        if(!addableStores.isEmpty())
-            populateList();
+        populateList();
 
         //Long clickedItem
         registerForContextMenu(storeListView);
@@ -135,8 +131,10 @@ public class FrontPage extends ActionBarActivity {
     //Checks if a store exists in the list
     public boolean storeExists(Store store) {
         String name = store.getName();
-        for(int i = 0; i < stores.size(); i++) {
-            if(name.compareTo(stores.get(i).getName()) == 0)
+        int storesSize = stores.size();
+
+        for(int i = 0; i < storesSize; i++) {
+            if(name.compareToIgnoreCase(stores.get(i).getName()) == 0)
                 return true;
         }
 
@@ -144,8 +142,8 @@ public class FrontPage extends ActionBarActivity {
     }
 
     public void populateList() {
-        StoreListAdapter adapter = new StoreListAdapter();
-        storeListView.setAdapter(adapter);
+        storeAdapter = new StoreListAdapter();
+        storeListView.setAdapter(storeAdapter);
 
     }
 
@@ -153,10 +151,29 @@ public class FrontPage extends ActionBarActivity {
     public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, view, menuInfo);
 
+        menu.setHeaderIcon(R.drawable.pencil_icon);
+        menu.setHeaderTitle("Store options");
         menu.add(Menu.NONE, EDIT, Menu.NONE, "Edit Store");
         menu.add(Menu.NONE, DELETE, Menu.NONE, "Delete Store");
     }
 
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case EDIT:
+                //TODO: implement edit store
+                break;
+            case DELETE:
+                //TODO: implement delete store
+                Store store = stores.get(longClickedIndex);
+                Toast.makeText(getApplicationContext(), String.valueOf(store.getName()) +
+                        " has been deleted", Toast.LENGTH_SHORT ).show();
+                dbHandler.deleteStore(stores.get(longClickedIndex));
 
+                stores.remove(longClickedIndex);
+                storeAdapter.notifyDataSetChanged();
+                break;
+        }
+        return super.onContextItemSelected(item);
+    }
 
 }
